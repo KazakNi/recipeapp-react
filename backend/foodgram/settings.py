@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-acm%^crz#3oysjk!n*)9!rr-b3ef1chbcfhxd((0jx6v3#66mx'
+SECRET_KEY = os.environ.get('SECRET_KEY', default='1asfsf32fsdfsdfsd')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -32,6 +32,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'api',
+    'users',
+    'recipes',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -54,6 +56,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'foodgram.urls'
+
+AUTH_USER_MODEL = 'users.MyUser'
 
 TEMPLATES = [
     {
@@ -79,13 +83,18 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 6,
+    'PAGINATE_BY_PARAM': 'limit',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+]
 }
 
 
 DJOSER = {
     'LOGIN_FIELD' : 'email',
     'SERIALIZERS': {
-        'user_create': 'api.serializers.UserRegistrationSerialzer',
+        'user_create': 'api.serializers.UserSerializer',
+        'current_user': 'api.serializers.UserSerializer',
     }
     
 }
@@ -95,10 +104,10 @@ DJOSER = {
 DATABASES = {
     'default': {
         "ENGINE": os.environ.get('DB_ENGINE', default="django.db.backends.postgresql"),
-        "NAME": os.environ.get("DB_NAME", default="postgres"),
+        "NAME": os.environ.get("DB_NAME", default="test"),
         "USER": os.environ.get("POSTGRES_USER", default="postgres"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", default="postgres"),
-        "HOST": os.environ.get("DB_HOST", default="postgres"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", default="unga1993"),
+        "HOST": os.environ.get("DB_HOST", default="localhost"),
         "PORT": os.environ.get("DB_PORT", default="5432"),
     }
 }
