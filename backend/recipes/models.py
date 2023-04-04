@@ -26,6 +26,7 @@ class Ingredient(models.Model):
     def __str__(self) -> str:
         return self.name
 
+
 class Recipe(models.Model):
 
     author = models.ForeignKey(MyUser, on_delete=models.CASCADE,
@@ -34,7 +35,8 @@ class Recipe(models.Model):
     image = models.ImageField(upload_to='recipes/images/')
     text = models.TextField(max_length=300, verbose_name='Описание')
     ingredients = models.ManyToManyField(to=Ingredient, related_name='recipes',
-                                          through_fields=('recipe', 'ingredients'),
+                                         through_fields=('recipe', 
+                                                         'ingredients'),
                                          through='RecipeIngredients')
     tags = models.ManyToManyField(Tag, related_name='recipes')
     cooking_time = models.PositiveSmallIntegerField(
@@ -44,6 +46,7 @@ class Recipe(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
 
 class RecipeIngredients(models.Model):
 
@@ -55,6 +58,7 @@ class RecipeIngredients(models.Model):
     
     def __str__(self) -> str:
         return self.recipe.name
+
 
 class Favorites(models.Model):
 

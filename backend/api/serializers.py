@@ -1,6 +1,6 @@
 from djoser.serializers import UserCreateSerializer
-from users.models import MyUser, Subscription
-from recipes.models import Tag
+from users.models import MyUser
+from recipes.models import Tag, Recipe, Ingredient
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from django.contrib.auth import get_user_model
 
@@ -17,7 +17,6 @@ class UserSerializer(UserCreateSerializer):
                   'password', 'is_subscribed',)
 
     def get_is_subscribed(self, obj):
-
         user = self.context['request'].user
         if user.is_anonymous or (user == obj):
             return False
@@ -40,3 +39,38 @@ class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug',)
+
+
+class RecipesSubscriber(ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time',)
+
+
+class UserSubscribersSerializer(UserSerializer):
+    recipes = SerializerMethodField(read_only=True)
+    recipes_count = SerializerMethodField()
+    is_subscribed = SerializerMethodField()
+
+    class Meta:
+        model = MyUser
+        fields = ('id', 'email', 'username', 'first_name', 'last_name',
+                  'password', 'is_subscribed', 'recipes', 'recipes_count')
+
+    def get_recipes(self, obj):
+        limit = int(self.context['recipes_limit'])
+        recipes = Recipe.objects.filter(author=obj)[:limit]
+        serializer = RecipesSubscriber(instance=recipes, many=True)
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj).count()
+
+    def get_is_subscribed(self, obj):
+        return True
+
+
+class IngredientSerializer(ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = ('__all__')
