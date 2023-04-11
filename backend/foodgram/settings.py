@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -95,7 +96,8 @@ DJOSER = {
     'SERIALIZERS': {
         'user_create': 'api.serializers.UserSerializer',
         'current_user': 'api.serializers.UserSerializer',
-    }
+    },
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     
 }
 # Database
