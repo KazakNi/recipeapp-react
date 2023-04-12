@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Tag, Recipe, RecipeIngredients, Ingredient, Favorites, Basket
 from django.db.models import Count
+from django.utils.safestring import mark_safe
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
@@ -20,7 +21,13 @@ class RecipeAdmin(admin.ModelAdmin):
     exclude = ('ingredients',)
     list_display = ('name', 'author', 'show_favorites')
     list_filter = ('name', 'author', 'tags')
-    readonly_fields = ('show_favorites',)
+    readonly_fields = ('show_favorites', 'image_tag')
+
+    def image_tag(self, obj):
+        print(obj.image.url)
+        return mark_safe(f'<img src={obj.image.url} width="80" hieght="30"')
+
+    image_tag.short_description = 'Image'
 
     def show_favorites(self, obj):
         result = obj.favorite_recipes.all().count()
