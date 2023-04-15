@@ -98,7 +98,10 @@ class Favorites(models.Model):
     class Meta:
         unique_together = [['author', 'recipe']]
         verbose_name = 'Избранное'
-
+        verbose_name_plural = 'Избранное'
+    
+    def __str__(self) -> str:
+        return f'Рецепт {self.recipe} в избранном {self.author}'
 
 class Basket(models.Model):
 
@@ -110,3 +113,7 @@ class Basket(models.Model):
     class Meta:
         unique_together = [['author', 'recipe']]
         verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'
+    
+    def __str__(self) -> str:
+        return f'Рецепт {self.recipe} в корзине пользователя {self.author}'

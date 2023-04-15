@@ -1,10 +1,11 @@
 from djoser.serializers import UserCreateSerializer
 from users.models import MyUser
-from recipes.models import Tag, Recipe, Ingredient, Favorites, RecipeIngredients, Basket
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, ReadOnlyField, PrimaryKeyRelatedField, IntegerField, CurrentUserDefault
+from recipes.models import Tag, Recipe, Ingredient, RecipeIngredients
+from rest_framework.serializers import (ModelSerializer, SerializerMethodField,
+                                        ReadOnlyField, PrimaryKeyRelatedField,
+                                        IntegerField)
 from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
-from django.db.models import F
 
 User = get_user_model()
 
@@ -33,7 +34,7 @@ class UserSerializer(UserCreateSerializer):
         )
         user.set_password(validated_data['password'])
         user.save()
-        return user 
+        return user
 
 
 class TagSerializer(ModelSerializer):
@@ -116,17 +117,21 @@ class RecipeSerializer(RecipeBaseSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context['request'].user
-        if self.context['is_favorited']:
-            return True
-        else:
-            return obj.favorite_recipes.filter(author=user).exists()
+        if user.is_authenticated:
+            if self.context['is_favorited']:
+                return True
+            else:
+                return obj.favorite_recipes.filter(author=user).exists()
+        return False
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
-        if self.context['is_in_shopping_cart']:
-            return True
-        else:
-            return obj.in_cart.filter(author=user).exists()
+        if user.is_authenticated:
+            if self.context['is_in_shopping_cart']:
+                return True
+            else:
+                return obj.in_cart.filter(author=user).exists()
+        return False
 
 
 class IngredientCreateSerializer(ModelSerializer):
@@ -201,5 +206,3 @@ class RecipeCreateSerializer(RecipeBaseSerializer):
 
     def to_representation(self, instance):
         return RecipeSerializer(instance, context=self.context).data
-
-        
