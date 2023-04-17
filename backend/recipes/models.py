@@ -103,6 +103,7 @@ class Favorites(models.Model):
     def __str__(self) -> str:
         return f'Рецепт {self.recipe} в избранном {self.author}'
 
+
 class Basket(models.Model):
 
     author = models.ForeignKey(MyUser, on_delete=models.CASCADE,
@@ -114,6 +115,6 @@ class Basket(models.Model):
         unique_together = [['author', 'recipe']]
         verbose_name = 'Корзина'
         verbose_name_plural = 'Корзины'
-    
+
     def __str__(self) -> str:
         return f'Рецепт {self.recipe} в корзине пользователя {self.author}'

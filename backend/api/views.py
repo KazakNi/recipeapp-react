@@ -5,8 +5,7 @@ from djoser.views import UserViewSet as UsersViewSet
 from .serializers import (TagSerializer, UserSerializer,
                           UserSubscribersSerializer, IngredientSerializer,
                           RecipeSerializer, RecipeCreateSerializer)
-from users.models import MyUser, Subscription
-from rest_framework.pagination import PageNumberPagination
+from users.models import MyUser, Subscriptions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from utils.paginators import UsersPagination, RecipePagination
@@ -23,7 +22,6 @@ from .permissions import IsAuthorOrReadOnly
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    pagination_class = PageNumberPagination
 
 
 class UserViewSet(UsersViewSet):
@@ -34,10 +32,10 @@ class UserViewSet(UsersViewSet):
     @action(methods=['get'], detail=False,
             permission_classes=[IsAuthenticated])
     def subscriptions(self, request, pk=None):
-        recipes_limit = self.request.query_params.get('recipes_limit', 5)
+        recipes_limit = self.request.query_params.get('recipes_limit', 6)
         user = self.request.user
         subscriptions = MyUser.objects.filter(followee__user=user)
-        serializer = UserSubscribersSerializer(subscriptions, many=True,
+        serializer = UserSubscribersSerializer(data=subscriptions, many=True,
                                                context={'request': request,
                                                         'recipes_limit':
                                                         recipes_limit})
@@ -46,13 +44,13 @@ class UserViewSet(UsersViewSet):
     @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, id=None):
-        user = self.get_object()
+        user = self.request.user
         author = MyUser.objects.get(pk=id)
         if user == author:
             return Response({'message': 'Подписаться на себя самого нельзя!'},
                             status=status.HTTP_400_BAD_REQUEST)
         if request.method == 'POST':
-            subscription, created = Subscription.objects.get_or_create(
+            subscription, created = Subscriptions.objects.get_or_create(
                 user=user, author=author)
             if created:
                 serializer = UserSubscribersSerializer(
@@ -62,7 +60,7 @@ class UserViewSet(UsersViewSet):
             return Response({'message': 'Вы уже подписаны!'},
                             status=status.HTTP_400_BAD_REQUEST)
         else:
-            obj = get_object_or_404(Subscription, user=user, author=author)
+            obj = get_object_or_404(Subscriptions, user=user, author=author)
             obj.delete()
             return Response({'message': 'Отписка произведена успешно!'})
 
@@ -113,15 +111,18 @@ class RecipeViewSet(ModelViewSet):
                         'is_in_shopping_cart': is_in_shopping_cart})
         return context
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=['post', 'delete'], detail=True,
+            permission_classes=[IsAuthenticated])
     def favorite(self, request, pk=None):
         return create_or_delete(pk, request, Favorites)
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=['post', 'delete'], detail=True,
+            permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         return create_or_delete(pk, request, Basket)
 
-    @action(methods=['get'], detail=False)
+    @action(methods=['get'], detail=False,
+            permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         user = request.user
         query = (RecipeIngredients.objects.filter(recipe__in_cart__author=user)

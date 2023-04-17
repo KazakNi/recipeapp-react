@@ -3,9 +3,10 @@ from users.models import MyUser
 from recipes.models import Tag, Recipe, Ingredient, RecipeIngredients
 from rest_framework.serializers import (ModelSerializer, SerializerMethodField,
                                         ReadOnlyField, PrimaryKeyRelatedField,
-                                        IntegerField)
+                                        IntegerField, BooleanField)
 from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
+from django.db.transaction import atomic
 
 User = get_user_model()
 
@@ -24,6 +25,7 @@ class UserSerializer(UserCreateSerializer):
             return False
         return user.follower.filter(author=obj).exists()
 
+    @atomic
     def create(self, validated_data: dict) -> User:
 
         user = User(
@@ -41,6 +43,7 @@ class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug',)
+        read_only_fields = '__all__',
 
 
 class RecipesSubscriber(ModelSerializer):
@@ -52,7 +55,7 @@ class RecipesSubscriber(ModelSerializer):
 class UserSubscribersSerializer(UserSerializer):
     recipes = SerializerMethodField(read_only=True)
     recipes_count = SerializerMethodField()
-    is_subscribed = SerializerMethodField()
+    is_subscribed = BooleanField(default=True) # Всегда возвращает Истину при ответе на запрос по подписке.
 
     class Meta:
         model = MyUser
@@ -67,9 +70,6 @@ class UserSubscribersSerializer(UserSerializer):
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
-
-    def get_is_subscribed(self, obj):
-        return True
 
 
 class IngredientSerializer(ModelSerializer):
@@ -181,6 +181,7 @@ class RecipeCreateSerializer(RecipeBaseSerializer):
 
         RecipeIngredients.objects.bulk_create(res)
 
+    @atomic
     def create(self, validated_data):
         user = self.context.get('request').user
         tags = validated_data.pop('tags')
@@ -190,6 +191,7 @@ class RecipeCreateSerializer(RecipeBaseSerializer):
         self.create_ingredients(ingredients, recipe)
         return recipe
 
+    @atomic
     def update(self, instance, validated_data):
         ingredients = validated_data.get('ingredients', instance.ingredients)
         tags = validated_data.get('tags', instance.tags)

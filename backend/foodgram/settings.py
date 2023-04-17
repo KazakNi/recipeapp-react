@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='1asfsf32fsdfsdfsd')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
