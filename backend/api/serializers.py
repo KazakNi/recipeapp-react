@@ -3,7 +3,7 @@ from users.models import MyUser
 from recipes.models import Tag, Recipe, Ingredient, RecipeIngredients
 from rest_framework.serializers import (ModelSerializer, SerializerMethodField,
                                         ReadOnlyField, PrimaryKeyRelatedField,
-                                        IntegerField, BooleanField)
+                                        IntegerField)
 from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
 from django.db.transaction import atomic
@@ -20,10 +20,7 @@ class UserSerializer(UserCreateSerializer):
                   'password', 'is_subscribed',)
 
     def get_is_subscribed(self, obj):
-        user = self.context['request'].user
-        if user.is_anonymous or (user == obj):
-            return False
-        return user.follower.filter(author=obj).exists()
+        return obj.id in self.context.get('subscriptions', [])
 
     @atomic
     def create(self, validated_data: dict) -> User:
@@ -42,7 +39,7 @@ class UserSerializer(UserCreateSerializer):
 class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'color', 'slug',)
+        fields = ('__all__')
         read_only_fields = '__all__',
 
 
@@ -55,7 +52,7 @@ class RecipesSubscriber(ModelSerializer):
 class UserSubscribersSerializer(UserSerializer):
     recipes = SerializerMethodField(read_only=True)
     recipes_count = SerializerMethodField()
-    is_subscribed = BooleanField(default=True) # Всегда возвращает Истину при ответе на запрос по подписке.
+    is_subscribed = SerializerMethodField()
 
     class Meta:
         model = MyUser
@@ -71,11 +68,15 @@ class UserSubscribersSerializer(UserSerializer):
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
 
+    def get_is_subscribed(self, obj):
+        return obj.id in self.context.get('subscriptions', [])
+
 
 class IngredientSerializer(ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ('__all__')
+        read_only_fields = '__all__',
 
 
 class IngrediendAmountSerializer(ModelSerializer):
@@ -105,7 +106,7 @@ class RecipeReadSerializer(ModelSerializer):
 
 
 class RecipeSerializer(RecipeBaseSerializer):
-    tags = TagSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True)
     ingredients = IngrediendAmountSerializer(many=True, required=True,
                                              source='recipe')
 
@@ -116,22 +117,10 @@ class RecipeSerializer(RecipeBaseSerializer):
                   'is_in_shopping_cart')
 
     def get_is_favorited(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            if self.context['is_favorited']:
-                return True
-            else:
-                return obj.favorite_recipes.filter(author=user).exists()
-        return False
+        return obj.id in self.context.get('favorited', [])
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context['request'].user
-        if user.is_authenticated:
-            if self.context['is_in_shopping_cart']:
-                return True
-            else:
-                return obj.in_cart.filter(author=user).exists()
-        return False
+        return obj.id in self.context.get('shopping_cart', [])
 
 
 class IngredientCreateSerializer(ModelSerializer):
@@ -157,18 +146,10 @@ class RecipeCreateSerializer(RecipeBaseSerializer):
                   'is_in_shopping_cart')
 
     def get_is_favorited(self, obj):
-        user = self.context['request'].user
-        if self.context['is_favorited']:
-            return True
-        else:
-            return obj.favorite_recipes.filter(author=user).exists()
+        return obj.id in self.context.get('favorited', [])
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context['request'].user
-        if self.context['is_in_shopping_cart']:
-            return True
-        else:
-            return obj.in_cart.filter(author=user).exists()
+        return obj.id in self.context.get('shopping_cart', [])
 
     def create_ingredients(self, ingredients, recipe):
         res = []

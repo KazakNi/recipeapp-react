@@ -1,27 +1,30 @@
-from recipes.models import (Tag, Ingredient, Recipe, Favorites,
-                            Basket, RecipeIngredients)
-from rest_framework.viewsets import ReadOnlyModelViewSet
-from djoser.views import UserViewSet as UsersViewSet
-from .serializers import (TagSerializer, UserSerializer,
-                          UserSubscribersSerializer, IngredientSerializer,
-                          RecipeSerializer, RecipeCreateSerializer)
-from users.models import MyUser, Subscriptions
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from utils.paginators import UsersPagination, RecipePagination
-from django.shortcuts import get_object_or_404
-from rest_framework import filters, status
-from rest_framework.viewsets import ModelViewSet
-from utils.helper import create_or_delete, cart_to_pdf_dump
+from api.filters import IngredientFilter, RecipeFilter
 from django.db.models import Sum
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet as UsersViewSet
+from recipes.models import (Basket, Favorites, Ingredient, Recipe,
+                            RecipeIngredients, Tag)
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from users.models import MyUser, Subscriptions
+from utils.helper import cart_to_pdf_dump, create_or_delete
+from utils.paginators import RecipePagination, UsersPagination
+
 from .permissions import IsAuthorOrReadOnly
+from .serializers import (IngredientSerializer, RecipeCreateSerializer,
+                          RecipeSerializer, TagSerializer, UserSerializer,
+                          UserSubscribersSerializer)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
 
 
 class UserViewSet(UsersViewSet):
@@ -29,17 +32,19 @@ class UserViewSet(UsersViewSet):
     pagination_class = UsersPagination
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    @action(methods=['get'], detail=False,
-            permission_classes=[IsAuthenticated])
+    @action(methods=['get'], detail=False)
     def subscriptions(self, request, pk=None):
+        if self.request.user.is_anonymous:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         recipes_limit = self.request.query_params.get('recipes_limit', 6)
         user = self.request.user
         subscriptions = MyUser.objects.filter(followee__user=user)
-        serializer = UserSubscribersSerializer(data=subscriptions, many=True,
+        pages = self.paginate_queryset(subscriptions)
+        serializer = UserSubscribersSerializer(pages, many=True,
                                                context={'request': request,
                                                         'recipes_limit':
                                                         recipes_limit})
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
@@ -49,13 +54,13 @@ class UserViewSet(UsersViewSet):
         if user == author:
             return Response({'message': 'Подписаться на себя самого нельзя!'},
                             status=status.HTTP_400_BAD_REQUEST)
-        if request.method == 'POST':
+        elif request.method == 'POST':
             subscription, created = Subscriptions.objects.get_or_create(
                 user=user, author=author)
             if created:
                 serializer = UserSubscribersSerializer(
-                    user, many=False, context={'request': request,
-                                               'recipes_limit': 1})
+                    author, many=False, context={'request': request,
+                                                 'recipes_limit': 1})
                 return Response(serializer.data)
             return Response({'message': 'Вы уже подписаны!'},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -64,18 +69,30 @@ class UserViewSet(UsersViewSet):
             obj.delete()
             return Response({'message': 'Отписка произведена успешно!'})
 
+    def get_serializer_context(self):
+        user = self.request.user
+        context = super().get_serializer_context()
+        subscriptions = set(Subscriptions.objects.filter(user_id=user.pk).
+                            values_list('author_id', flat=True))
+        context.update({'subscriptions': subscriptions})
+        return context
+
 
 class IngredientsViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilter
+    pagination_class = None
 
 
 class RecipeViewSet(ModelViewSet):
+    queryset = Recipe.objects.all()
     pagination_class = RecipePagination
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthorOrReadOnly]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method == 'POST' or self.request.method == 'PATCH':
@@ -83,32 +100,15 @@ class RecipeViewSet(ModelViewSet):
         else:
             return RecipeSerializer
 
-    def get_queryset(self):
-        SEARCH_PARAMS = ('1', 'true')
-        queryset = Recipe.objects.select_related('author')
-        is_favorited = self.get_serializer_context()['is_favorited']
-        tags = self.request.query_params.getlist('tags')
-        author = self.request.query_params.get('author')
-        is_in_shopping_cart = self.get_serializer_context()[
-            'is_in_shopping_cart']
-        user = self.request.user
-        if tags:
-            queryset = queryset.filter(tags__slug__in=tags)
-        if is_favorited in SEARCH_PARAMS:
-            queryset = queryset.filter(favorite_recipes__author=user)
-        if is_in_shopping_cart in SEARCH_PARAMS:
-            queryset = queryset.filter(in_cart__author=user)
-        if author:
-            queryset = queryset.filter(author__username=author)
-        return queryset
-
     def get_serializer_context(self):
+        user = self.request.user
         context = super().get_serializer_context()
-        is_favorited = self.request.query_params.get('is_favorited')
-        is_in_shopping_cart = self.request.query_params.get(
-            'is_in_shopping_cart')
-        context.update({'request': self.request, 'is_favorited': is_favorited,
-                        'is_in_shopping_cart': is_in_shopping_cart})
+        is_favorited = set(Favorites.objects.filter(author_id=user.pk).
+                           values_list('recipe_id', flat=True))
+        is_in_shopping_cart = set(Basket.objects.filter(author_id=user.pk).
+                                  values_list('recipe_id', flat=True))
+        context.update({'favorited': is_favorited,
+                        'shopping_cart': is_in_shopping_cart})
         return context
 
     @action(methods=['post', 'delete'], detail=True,
@@ -128,4 +128,5 @@ class RecipeViewSet(ModelViewSet):
         query = (RecipeIngredients.objects.filter(recipe__in_cart__author=user)
                  .values('ingredients__name', 'ingredients__measurement_unit')
                  .annotate(amount=Sum('amount')))
+        print(query)
         return cart_to_pdf_dump(query)
