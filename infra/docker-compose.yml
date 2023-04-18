@@ -11,30 +11,23 @@ services:
     env_file:
       - ./.env
   web:
-    build: ../backend
+    image: nikitakaz/foodgram:v1.0.0 
     restart: always
     command: >
       bash -c "python manage.py migrate &&
       python manage.py collectstatic --noinput &&
       gunicorn --bind 0:8000 foodgram.wsgi"
     volumes:
-      # Контейнер web будет работать с данными, хранящиеся в томе static_value, 
-      # через свою директорию /app/static/
       - static_value:/app/static/
-      # Данные, хранящиеся в томе media_value, будут доступны в контейнере web 
-      # через директорию /app/media/
       - media_value:/app/media/
-    ports:
-     - "8000:8000"
-    # "зависит от", 
+    #ports:
+    # - "8000:8000"
     depends_on:
       - db
     env_file:
       - ./.env
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: nikitakaz/foodgram_front:v1.0.0
     volumes:
       - ../frontend/:/app/result_build/
   nginx:
