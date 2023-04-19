@@ -7,3 +7,5 @@ exclude =
     env
     .env
 noqa: I005, I001
+per-file-ignores = 
+    backend/foodgram/settings.py
