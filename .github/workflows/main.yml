@@ -36,10 +36,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2 
       - name: Open Web Client Directory
-        run: |
-          ls -la
-          cd ./backend
-          ls -la
+        run: cd ./backend
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1 
       - name: Login to Docker 
