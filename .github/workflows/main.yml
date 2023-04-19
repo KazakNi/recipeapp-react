@@ -63,7 +63,6 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
-        passphrase: ${{ secrets.PASSPHRASE }}
         script: |
           ls -a
           sudo docker pull nikitakaz/foodgram:v1.0.0
