@@ -12,7 +12,6 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        # Выбор версии Python
         python-version: 3.7
 
     - name: Install dependencies
@@ -43,14 +42,12 @@ jobs:
           username: nikitakaz 
           password: Lyceum1502
       - name: Push to back image Docker Hub
-        # Пуш образа в Docker Hub 
         uses: docker/build-push-action@v2 
         with:
-          context: backend
+          path: ./backend
           push: true
           tags: nikitakaz/foodgram:v1.0.0
       - name: Push front image to Docker Hub
-        # Пуш образа в Docker Hub 
         uses: docker/build-push-action@v2 
         with:
           context: frontend
