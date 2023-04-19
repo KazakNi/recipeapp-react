@@ -40,7 +40,7 @@ jobs:
       - name: Login to Docker 
         uses: docker/login-action@v1
       - name: Moving to workdir
-        uses: cd backend  
+        run: cd backend  
         with:
           username: nikitakaz 
           password: Lyceum1502
