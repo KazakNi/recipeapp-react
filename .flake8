@@ -8,4 +8,5 @@ exclude =
     .env
 ignore =
     I005,
-    I001
+    I001,
+    I003

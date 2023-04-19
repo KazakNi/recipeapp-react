@@ -8,8 +8,6 @@ import io
 from django.http import FileResponse
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from foodgram import settings
-import os
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 
@@ -46,11 +44,10 @@ def cart_to_pdf_dump(query):
             ingredients[q['ingredients__name']] += q['amount']
         else:
             ingredients[q['ingredients__name']] = q['amount']
-        
+
         ings_meas[q['ingredients__name']] = q['ingredients__measurement_unit']
     for name, amount in ingredients.items():
-        line = (name + ' —' + f' {amount} ' +
-                f' ({ings_meas[name]})')
+        line = (name + ' —' + f' {amount} ' + f' ({ings_meas[name]})')
         my_text.append(line)
     my_text = '\n'.join(my_text)
     textobject = x.beginText(250, 800)

@@ -67,11 +67,13 @@ class Recipe(models.Model):
 
 class RecipeIngredients(models.Model):
 
-    ingredients = models.ForeignKey(to=Ingredient, on_delete=models.CASCADE, related_name='ingredient')
-    recipe = models.ForeignKey(to=Recipe, on_delete=models.CASCADE, related_name='recipe')
+    ingredients = models.ForeignKey(to=Ingredient, on_delete=models.CASCADE,
+                                    related_name='ingredient')
+    recipe = models.ForeignKey(to=Recipe, on_delete=models.CASCADE,
+                               related_name='recipe')
     amount = models.PositiveIntegerField(
         validators=[MinValueValidator(1, 'Кол-во ингредиента не может'
-                                      'быть меньше единицы.')], 
+                                      'быть меньше единицы.')],
         blank=False,
         null=False)
 
@@ -99,7 +101,7 @@ class Favorites(models.Model):
         unique_together = [['author', 'recipe']]
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-    
+
     def __str__(self) -> str:
         return f'Рецепт {self.recipe} в избранном {self.author}'
 

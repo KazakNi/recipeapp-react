@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import Tag, Recipe, RecipeIngredients, Ingredient, Favorites, Basket
-from django.db.models import Count
+from .models import (Tag, Recipe, RecipeIngredients,
+                     Ingredient, Favorites, Basket)
 from django.utils.safestring import mark_safe
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
@@ -44,6 +45,7 @@ class RecipeIngredientsAdmin(admin.ModelAdmin):
 class Ingredient(admin.ModelAdmin):
     list_filter = ('name',)
     list_display = ('name', 'measurement_unit')
+
 
 @admin.register(Favorites)
 class Favorite(admin.ModelAdmin):

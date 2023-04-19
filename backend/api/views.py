@@ -74,6 +74,7 @@ class UserViewSet(UsersViewSet):
         context.update({'subscriptions': subscriptions})
         return context
 
+
 class IngredientsViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
