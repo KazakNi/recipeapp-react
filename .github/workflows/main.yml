@@ -42,13 +42,16 @@ jobs:
         with:
           username: nikitakaz 
           password: Lyceum1502
-      - name: Push to Docker Hub
+      - name: Push to back image Docker Hub
         # Пуш образа в Docker Hub 
         uses: docker/build-push-action@v2 
         with:
           context: backend
           push: true
           tags: nikitakaz/foodgram:v1.0.0
+      - name: Push front image to Docker Hub
+        # Пуш образа в Docker Hub 
+        uses: docker/build-push-action@v2 
         with:
           context: frontend
           push: true
