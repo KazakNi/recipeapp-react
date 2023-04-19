@@ -2,7 +2,7 @@ name: foodgram-CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 jobs:
   tests:
     runs-on: ubuntu-latest
