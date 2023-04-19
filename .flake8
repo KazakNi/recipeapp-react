@@ -9,4 +9,7 @@ exclude =
 ignore =
     I005,
     I001,
-    I003
+    I003,
+    R504,
+    R505,
+    N803 
