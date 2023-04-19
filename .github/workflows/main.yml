@@ -39,8 +39,8 @@ jobs:
       - name: Login to Docker 
         uses: docker/login-action@v1
         with:
-          username: nikitakaz 
-          password: Lyceum1502
+          username: ${{ secrets.DOCKERLOGIN }} 
+          password: ${{ secrets.DOCKERPASS }}
       - name: Push to back image Docker Hub
         uses: docker/build-push-action@v2 
         with:
@@ -53,3 +53,31 @@ jobs:
           context: frontend
           push: true
           tags: nikitakaz/foodgram_front:v1.0.0
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push_to_docker_hub
+    steps:
+    - name: executing remote ssh commands to deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        #passphrase: ${{ secrets.PASSPHRASE }}  Если ваш ssh-ключ защищён фразой-паролем
+        script: |
+          ls -a
+          sudo docker pull nikitakaz/foodgram:v1.0.0
+          sudo docker pull nikitakaz/foodgram_front:v1.0.0
+          sudo docker stop $(sudo docker ps -a -q)
+          sudo docker rm $(docker ps -a -q)
+          sudo docker-compose up
+  send_message:
+  runs-on: ubuntu-latest
+  needs: deploy
+  steps:
+  - name: send message
+    uses: appleboy/telegram-action@master
+    with:
+      to: ${{ secrets.TELEGRAM_TO }}
+      token: ${{ secrets.TELEGRAM_TOKEN }}
+      message: ${{ github.workflow }} успешно выполнен!
