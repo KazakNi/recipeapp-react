@@ -51,10 +51,7 @@ class UserViewSet(UsersViewSet):
     def subscribe(self, request, id=None):
         user = self.request.user
         author = MyUser.objects.get(pk=id)
-        if user == author:
-            return Response({'message': 'Подписаться на себя самого нельзя!'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        elif request.method == 'POST':
+        if request.method == 'POST':
             subscription, created = Subscriptions.objects.get_or_create(
                 user=user, author=author)
             if created:
@@ -76,7 +73,6 @@ class UserViewSet(UsersViewSet):
                             values_list('author_id', flat=True))
         context.update({'subscriptions': subscriptions})
         return context
-
 
 class IngredientsViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
@@ -128,5 +124,4 @@ class RecipeViewSet(ModelViewSet):
         query = (RecipeIngredients.objects.filter(recipe__in_cart__author=user)
                  .values('ingredients__name', 'ingredients__measurement_unit')
                  .annotate(amount=Sum('amount')))
-        print(query)
         return cart_to_pdf_dump(query)

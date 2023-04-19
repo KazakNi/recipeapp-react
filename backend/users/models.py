@@ -31,7 +31,10 @@ class Subscriptions(models.Model):
                                related_name='followee')
 
     class Meta:
-        unique_together = ['user', 'author']
+        constraints = [
+            models.UniqueConstraint(
+                fields=('user', 'author'),
+                name='unique subscriber')]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
