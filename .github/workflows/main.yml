@@ -64,7 +64,8 @@ jobs:
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          ls -a
+          cd foodgram-project-react/infra
+          ls
           sudo docker pull nikitakaz/foodgram:v1.0.0
           sudo docker pull nikitakaz/foodgram_front:v1.0.0
           sudo docker stop $(sudo docker ps -a -q)
