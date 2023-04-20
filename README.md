@@ -40,7 +40,7 @@ cd infra
 docker-compose up -d
 ```
 
-Войти в контейнер бэкенда, создать суперюзера, подгрузить дамп ингредиентов в базу данных.
+- Войти в контейнер бэкенда, создать суперюзера, подгрузить дамп ингредиентов в базу данных.
 
 ```sh
 docker exec -it nikitakaz/foodgram:v1.0.0 bash
@@ -48,7 +48,7 @@ python manage.py createsuperuser
 ---создаем пользователя---
 python manage.py loaddump data/data.json
 ```
-Приложение будет доступно по адресу localhost/recipes
+Приложение будет доступно по адресу _localhost/recipes_
 
 После входа в учетную запись можем наполнять сайт.
 ## License
