@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='1asfsf32fsdfsdfsd')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['51.250.98.23', 'localhost', '127.0.0.1', 'fooddy.ddns.net']
+ALLOWED_HOSTS = ['51.250.28.136', 'localhost', '127.0.0.1', 'fooddy.ddns.net']
 
 
 # Application definition
