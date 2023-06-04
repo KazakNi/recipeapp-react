@@ -9,8 +9,6 @@
 
 Автором репозитория реализован Бэкенд.
 
-Сайт приложения: http://fooddy.ddns.net/
-
 Стек:
 - Django Rest Framework
 - PostgreSQL
